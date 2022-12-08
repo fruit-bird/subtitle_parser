@@ -12,9 +12,9 @@ use std::fs;
 use std::path::Path;
 
 #[derive(Default)]
-pub struct Subtitle<'a> {
+pub struct Subtitle {
     // pub video: Option<YouTubeVideo>,
-    pub subtitles: &'a str,
+    pub subtitles: String,
 }
 
 // #[derive(Debug, Default)]
@@ -23,9 +23,9 @@ pub struct Subtitle<'a> {
 //     pub title: String,
 // }
 
-impl<'a> Subtitle<'a> {
+impl Subtitle {
     /// Normal constructor
-    pub fn new(subtitles: impl Into<&'a str>) -> Self {
+    pub fn new(subtitles: impl Into<String>) -> Self {
         Self {
             subtitles: subtitles.into(),
         }
@@ -46,12 +46,11 @@ impl<'a> Subtitle<'a> {
         let mut subtitles = String::new();
         lines_vec.iter().for_each(|s| subtitles.push_str(s));
 
-        // let x = subtitles;
-        Ok(Self { subtitles: &subtitles })
+        Ok(Self { subtitles })
     }
 }
 
-impl<'a> std::fmt::Display for Subtitle<'a> {
+impl std::fmt::Display for Subtitle {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.subtitles)
     }

@@ -4,11 +4,14 @@
 //!
 //! **TODO:**
 //! - Expand on this to only take a YT URL and the code does everything automatically
-//! - Later use clap crate to turn this into CLI
-//! - Later allow this to be serialized
+//! - Convert type from String to &str for less heap allocations
+//! - Later use clap to turn this into a CLI
+//! - Serialization???
 
 use anyhow::Result;
-use std::fs;
+use std::fmt::Display;
+use std::fs::{self, File};
+use std::io::Write;
 use std::path::Path;
 
 #[derive(Default)]
@@ -33,24 +36,25 @@ impl Subtitle {
 
     /// Parses an input file of YT subtitles that look like a poem into a single solid block of text
     pub fn new_from_file(file_path: &Path) -> Result<Self> {
-        let file_contents = fs::read_to_string(file_path)?;
+        let mut subtitles = String::new();
 
-        let mut lines_vec = file_contents
+        fs::read_to_string(file_path)?
             .split('\n')
             .step_by(2)
-            .map(|s| s.to_string())
-            .collect::<Vec<_>>();
-
-        lines_vec.iter_mut().for_each(|s| s.push(' '));
-
-        let mut subtitles = String::new();
-        lines_vec.iter().for_each(|s| subtitles.push_str(s));
+            .for_each(|s| subtitles.push_str(format!("{} ", s).as_str()));
 
         Ok(Self { subtitles })
     }
+
+    pub fn write_to_file(&self) -> Result<()> {
+        let mut output_file = File::create("output.txt")?;
+        output_file.write_all(self.subtitles.as_bytes())?;
+
+        Ok(())
+    }
 }
 
-impl std::fmt::Display for Subtitle {
+impl Display for Subtitle {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.subtitles)
     }

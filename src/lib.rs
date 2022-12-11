@@ -27,12 +27,6 @@ pub struct Subtitle {
 // }
 
 impl Subtitle {
-    /// Parses an input string of YT subtitles that look like a poem into a single solid block of text
-    pub fn new_from_string(subtitles: impl Into<String>) -> Self {
-        let subtitles = Self::subtitle_formatter(subtitles.into());
-        Self { subtitles }
-    }
-
     /// Parses an input file of YT subtitles that look like a poem into a single solid block of text
     pub fn new_from_file(file_path: impl AsRef<Path>) -> Result<Self> {
         let input = fs::read_to_string(file_path)?;
@@ -41,19 +35,19 @@ impl Subtitle {
     }
 
     /// Writes the formatted
-    pub fn write_to_file(&self) -> Result<()> {
+    pub fn write_to_file(&self) -> Result<File> {
         let mut output_file = File::create("output.txt")?;
         output_file.write_all(self.subtitles.as_bytes())?;
-
-        Ok(())
+        Ok(output_file)
     }
 
     /// Where the magic happens.
     ///
     /// Put in a separate function for reusability
-    fn subtitle_formatter(input_string: String) -> String {
+    fn subtitle_formatter(input_string: impl AsRef<str>) -> String {
         let mut output_string = String::new();
         input_string
+            .as_ref()
             .split('\n')
             .step_by(2)
             .for_each(|s| output_string.push_str(format!("{} ", s).as_str()));
@@ -62,18 +56,16 @@ impl Subtitle {
     }
 }
 
-impl Display for Subtitle {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.subtitles)
+impl From<&str> for Subtitle {
+    fn from(s: &str) -> Self {
+        let subtitles = Self::subtitle_formatter(s);
+        Self { subtitles }
     }
 }
 
-impl From<&str> for Subtitle {
-    /// Same as the `new_from_string` associated function
-    fn from(s: &str) -> Self {
-        Self {
-            subtitles: Subtitle::subtitle_formatter(s.to_string()),
-        }
+impl Display for Subtitle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.subtitles)
     }
 }
 
@@ -89,12 +81,6 @@ who is that coming off the pick and roll
 ha ha ha oh man oh man hold on can we"#;
 
     #[test]
-    fn subtitle_formatting_from_string() {
-        let subs = Subtitle::new_from_string(UNFORMATTED_TEXT);
-        assert_eq!(subs.subtitles, FORMATTED_TEXT);
-    }
-
-    #[test]
     fn subtitle_formatting_from_file() -> Result<()> {
         let file_path = "test_file.txt";
 
@@ -106,6 +92,12 @@ ha ha ha oh man oh man hold on can we"#;
 
         std::fs::remove_file(file_path)?; // deleting the temp file
         Ok(())
+    }
+
+    #[test]
+    fn subtitle_formatting_from_str() {
+        let subs = Subtitle::from(UNFORMATTED_TEXT);
+        assert_eq!(subs.subtitles, FORMATTED_TEXT);
     }
 
     #[test]
